@@ -405,6 +405,8 @@
 <p>在自己的Application的onCreate()中添入下面语句:</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">BlockCanary.install(this, BlockCanaryContext()).start()</span><br></pre></td></tr></table></figure>
 
+<a id="more"></a>
+
 <h1 id="二、源码分析："><a href="#二、源码分析：" class="headerlink" title="二、源码分析："></a>二、源码分析：</h1><h2 id="2-1、BlockCanary-install-："><a href="#2-1、BlockCanary-install-：" class="headerlink" title="2.1、BlockCanary.install()："></a>2.1、BlockCanary.install()：</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public static BlockCanary install(Context context, BlockCanaryContext blockCanaryContext) &#123;</span><br><span class="line">&#x2F;&#x2F;将两个上下文进行了保存</span><br><span class="line">    BlockCanaryContext.init(context, blockCanaryContext);</span><br><span class="line">    setEnabled(context, DisplayActivity.class, BlockCanaryContext.get().displayNotification());</span><br><span class="line">    &#x2F;&#x2F;获取一个单例的BlockCanary</span><br><span class="line">    return get();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>install方法内部比较简单，就是将上下文进行了保存，并得到了一个单例的BlockCanary，接下来我们就看下BlockCanary的构造函数</p>
@@ -436,6 +438,8 @@
     <url>/2021/02/13/leakcanary%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</url>
     <content><![CDATA[<h1 id="一、leakcanary配置："><a href="#一、leakcanary配置：" class="headerlink" title="一、leakcanary配置："></a>一、leakcanary配置：</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">  &#x2F;&#x2F; 只需要在测试阶段使用，所以只配置debug的</span><br><span class="line">  debugImplementation &#39;com.squareup.leakcanary:leakcanary-android:2.6&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<a id="more"></a>
+
 <h1 id="二、源码分析："><a href="#二、源码分析：" class="headerlink" title="二、源码分析："></a>二、源码分析：</h1><p>在2.4以前都需要手动去注册leakcanary，之后就将这个自动注册的功能放在了provider当中，在配置完leakcanary之后可以在jetified-leakcanary-object-watcher-android-2.6/AndroidManifest.xml中可以看到有一个注册的provider AppWatcherInstaller<br>    provider之所以比Application的onCreate()先执行，我们可以从ActivityThread里的H中handleMessage找到答案</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">case BIND_APPLICATION:</span><br><span class="line">         Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, &quot;bindApplication&quot;);</span><br><span class="line">         AppBindData data &#x3D; (AppBindData)msg.obj;</span><br><span class="line">         handleBindApplication(data);</span><br><span class="line">         Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);</span><br><span class="line">         break;</span><br><span class="line">         </span><br><span class="line">   handleBindApplication():      </span><br><span class="line">   if (!data.restrictedBackupMode) &#123;</span><br><span class="line">        if (!ArrayUtils.isEmpty(data.providers)) &#123;</span><br><span class="line">            installContentProviders(app, data.providers);</span><br><span class="line">        &#125;</span><br><span class="line">     &#125;</span><br><span class="line">   try &#123;</span><br><span class="line">        mInstrumentation.callApplicationOnCreate(app);</span><br><span class="line">       &#125;</span><br></pre></td></tr></table></figure>
 
@@ -454,6 +458,9 @@
 
 <h1 id="三、总结："><a href="#三、总结：" class="headerlink" title="三、总结："></a>三、总结：</h1><p>​    1、在Leakcanary的源码当中，我们学到了第三方库的初始化可以放到ContentProvider当中，就不需要我们再在Application当中去初始化<br>​    2、当引用发生回收时，会将这个引用添加到队列当中<br>​    3、在触发gc时通过Runtime.gc()去触发，并不是通过System.gc()触发，因为System.gc()可能只触发一次就不再触发<br>​    4、当进行dump的过程中，分析内存的时间间隔为60s，在没达到60s时会进行顺延<br>​    5、当泄漏实例超过5个，将不再进行dump操作<br>​    6、在进行内存分析的过程中，之前是用的haha的库，后面用了shark进行分析，且按照官方所说，shark的内存消耗降低了90%，速度快了6倍</p>
 ]]></content>
+      <categories>
+        <category>源码</category>
+      </categories>
       <tags>
         <tag>第三方源码</tag>
       </tags>
@@ -461,7 +468,10 @@
   <entry>
     <title>深入RecyclerView</title>
     <url>/2021/03/24/%E6%B7%B1%E5%85%A5RecyclerView/</url>
-    <content><![CDATA[<h1 id="一、ListView与RecyclerView区别："><a href="#一、ListView与RecyclerView区别：" class="headerlink" title="一、ListView与RecyclerView区别："></a>一、ListView与RecyclerView区别：</h1><p>​    1.1、在ListView的Adapter中在getView()中会有大量的代码，而在RecyclerView的Adapter当中将原本的getView()通过onCreateViewHolder()和onBindViewHolder()<br>​        进行了分离。<br>​    1.2、ListView回收复用的是View，而RecyclerView回收复用的是ViewHolder<br>​    1.3、在ListView的Adapter的ViewType通常是返回的连续的，是因为ListView当中使用缓存是通过RecycleBin来实现的，在这个当中存在两个数组：<br>​        View[] mActiveViews：是显示在屏幕当中的View<br>​        ArrayList<View>[] mScrapViews：被废弃的View<br>​        正因为在ListView当中是通过这两个数组来实现的缓存，所以ViewType需要返回的是一个连续的数字<br>​    1.4、为什么有了ListView还要重新搞出一个RecyclerView呢？<br>​        在ListView当中如果要给一个item做动画是很难的，原因在于不知道具体哪个或者哪几个item发生了改变，每次修改完之后都需要全部重新测量、布局等操作，换句话说<br>​        在ListView上面做局部刷新很难。所以促使了RecyclerView的产生。</p>
+    <content><![CDATA[<h1 id="一、ListView与RecyclerView区别："><a href="#一、ListView与RecyclerView区别：" class="headerlink" title="一、ListView与RecyclerView区别："></a>一、ListView与RecyclerView区别：</h1><p>​    1.1、在ListView的Adapter中在getView()中会有大量的代码，而在RecyclerView的Adapter当中将原本的getView()通过onCreateViewHolder()和onBindViewHolder()<br>​        进行了分离。<br>​    1.2、ListView回收复用的是View，而RecyclerView回收复用的是ViewHolder<br>​    1.3、在ListView的Adapter的ViewType通常是返回的连续的，是因为ListView当中使用缓存是通过RecycleBin来实现的，在这个当中存在两个数组：</p>
+<a id="more"></a>
+
+<p>​        View[] mActiveViews：是显示在屏幕当中的View<br>​        ArrayList<View>[] mScrapViews：被废弃的View<br>​        正因为在ListView当中是通过这两个数组来实现的缓存，所以ViewType需要返回的是一个连续的数字<br>​    1.4、为什么有了ListView还要重新搞出一个RecyclerView呢？<br>​        在ListView当中如果要给一个item做动画是很难的，原因在于不知道具体哪个或者哪几个item发生了改变，每次修改完之后都需要全部重新测量、布局等操作，换句话说<br>​        在ListView上面做局部刷新很难。所以促使了RecyclerView的产生。</p>
 <h1 id="二、RecyclerView的几大核心组件："><a href="#二、RecyclerView的几大核心组件：" class="headerlink" title="二、RecyclerView的几大核心组件："></a>二、RecyclerView的几大核心组件：</h1><p>​    极致的体现了单一职责的设计</p>
 <h2 id="2-1、LayoutManager："><a href="#2-1、LayoutManager：" class="headerlink" title="2.1、LayoutManager："></a>2.1、LayoutManager：</h2><p>​        LayoutManager用来管理RecyclerView的onMeasure和onLayout，在RecyclerView的onMeasure当中可以看到下面一段代码<br>​        //这里的mLayout就是LayoutManager<br>​         mLayout.onMeasure(mRecycler, mState, widthSpec, heightSpec)<br>​         在RecyclerView的onLayout()中的dispatchLayout()中会去调用<br>​         dispatchLayoutStep1();<br>​         mLayout.setExactMeasureSpecsFrom(this);<br>​         dispatchLayoutStep2();<br>​         在dispatchLayoutStep2()中会去调用<br>​         mLayout.onLayoutChildren(mRecycler, mState)，所以LayoutManager是来管理RecyclerView的测量和布局的<br>​         LayoutManager只会向Recycler要View</p>
 <h2 id="2-2、Recycler："><a href="#2-2、Recycler：" class="headerlink" title="2.2、Recycler："></a>2.2、Recycler：</h2><p>​         作为缓存管理，缓存管理找到相应的ViewHolder，如果最开始时是空的，那么Recycler就会去调用adapter的onCreateViewHolder(),最终是得到的ViewHolder</p>
