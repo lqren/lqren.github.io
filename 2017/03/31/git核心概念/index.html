@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+
+  <meta name="description" content="一、中央式与分布式区别：​    分布式：例如：我们在远端将远端的某个数据进行删除之后，我们在本地通过git pull​           拉取远端数据时，再通过本地去查看历史记录是可以看到远端的操作记录的，而且我们可以在本地重新恢复。每一个本地的都可以作为一个中央式的，当没有联网​           的情况下，本地可以有多个提交，当有网络时再提交到远端，提交到远端会保持着所有在没有联网的情况">
+<meta property="og:type" content="article">
+<meta property="og:title" content="git核心概念">
+<meta property="og:url" content="http://example.com/2017/03/31/git%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/index.html">
+<meta property="og:site_name" content="Roqy&#39;s Notes">
+<meta property="og:description" content="一、中央式与分布式区别：​    分布式：例如：我们在远端将远端的某个数据进行删除之后，我们在本地通过git pull​           拉取远端数据时，再通过本地去查看历史记录是可以看到远端的操作记录的，而且我们可以在本地重新恢复。每一个本地的都可以作为一个中央式的，当没有联网​           的情况下，本地可以有多个提交，当有网络时再提交到远端，提交到远端会保持着所有在没有联网的情况">
+<meta property="og:locale">
+<meta property="article:published_time" content="2017-03-31T10:48:05.000Z">
+<meta property="article:modified_time" content="2021-04-01T02:42:29.284Z">
+<meta property="article:tag" content="git">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2017/03/31/git%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>git核心概念 | Roqy's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Roqy's Notes</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">stay hungry stay foolish</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">5</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">21</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%B8%AD%E5%A4%AE%E5%BC%8F%E4%B8%8E%E5%88%86%E5%B8%83%E5%BC%8F%E5%8C%BA%E5%88%AB%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">一、中央式与分布式区别：</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%8C%87%E4%BB%A4%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">二、指令：</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#git-clone%EF%BC%9A"><span class="nav-number">2.1.</span> <span class="nav-text">git clone：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-log%EF%BC%9A"><span class="nav-number">2.2.</span> <span class="nav-text">git log：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-add-%EF%BC%9A"><span class="nav-number">2.3.</span> <span class="nav-text">git add .：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-commit%EF%BC%9A"><span class="nav-number">2.4.</span> <span class="nav-text">git commit：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-push-origin-master%EF%BC%9A"><span class="nav-number">2.5.</span> <span class="nav-text">git push origin master：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-pull-origin-master"><span class="nav-number">2.6.</span> <span class="nav-text">git pull origin master:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-branch-xxx"><span class="nav-number">2.7.</span> <span class="nav-text">git branch xxx:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-checkout-xxx"><span class="nav-number">2.8.</span> <span class="nav-text">git checkout xxx:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-checkout-%E2%80%93detach"><span class="nav-number">2.9.</span> <span class="nav-text">git checkout –detach</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-merge"><span class="nav-number">2.10.</span> <span class="nav-text">git merge:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-merge-xxx-%E2%80%93no-ff"><span class="nav-number">2.11.</span> <span class="nav-text">git merge xxx –no-ff:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-reset-%E2%80%93hard-cf62f5"><span class="nav-number">2.12.</span> <span class="nav-text">git reset –hard cf62f5:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-merge-%E2%80%93continue"><span class="nav-number">2.13.</span> <span class="nav-text">git merge –continue:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-status"><span class="nav-number">2.14.</span> <span class="nav-text">git status:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-branch-d"><span class="nav-number">2.15.</span> <span class="nav-text">git branch -d:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-rebase"><span class="nav-number">2.16.</span> <span class="nav-text">git rebase:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-stash"><span class="nav-number">2.17.</span> <span class="nav-text">git stash:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-stash-pop"><span class="nav-number">2.18.</span> <span class="nav-text">git stash pop:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-reset"><span class="nav-number">2.19.</span> <span class="nav-text">git reset:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-commit-%E2%80%93amend"><span class="nav-number">2.20.</span> <span class="nav-text">git commit –amend:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-rebase-XXX-i"><span class="nav-number">2.21.</span> <span class="nav-text">git rebase XXX -i:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-rebase-%E2%80%93continue"><span class="nav-number">2.22.</span> <span class="nav-text">git rebase –continue:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-revert-xxx"><span class="nav-number">2.23.</span> <span class="nav-text">git revert xxx:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-add-i"><span class="nav-number">2.24.</span> <span class="nav-text">git add -i:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-diff-%E2%80%93staged"><span class="nav-number">2.25.</span> <span class="nav-text">git diff –staged:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-diff"><span class="nav-number">2.26.</span> <span class="nav-text">git diff:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-show"><span class="nav-number">2.27.</span> <span class="nav-text">git show:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-tag-xxx"><span class="nav-number">2.28.</span> <span class="nav-text">git tag xxx:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-cherry-pick"><span class="nav-number">2.29.</span> <span class="nav-text">git cherry-pick:</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%8C%87%E4%BB%A4%E9%83%BD%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%9A"><span class="nav-number">3.</span> <span class="nav-text">三、指令都发生了什么：</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E9%A1%B9%E7%9B%AE%E4%B8%AD%E7%9A%84%E5%88%86%E6%94%AF%E7%AE%A1%E7%90%86%EF%BC%9Afeature-Branching"><span class="nav-number">4.</span> <span class="nav-text">四、项目中的分支管理：feature Branching</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name"></p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yourname" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yourname" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yourname@gmail.com" title="E-Mail → mailto:yourname@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/yourname" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;yourname" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/yourname" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;yourname" rel="noopener" target="_blank"><i class="fab fa-google fa-fw"></i>Google</a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2017/03/31/git%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Roqy's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          git核心概念
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017-03-31 18:48:05" itemprop="dateCreated datePublished" datetime="2017-03-31T18:48:05+08:00">2017-03-31</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-04-01 10:42:29" itemprop="dateModified" datetime="2021-04-01T10:42:29+08:00">2021-04-01</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/git/" itemprop="url" rel="index"><span itemprop="name">git</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="一、中央式与分布式区别："><a href="#一、中央式与分布式区别：" class="headerlink" title="一、中央式与分布式区别："></a>一、中央式与分布式区别：</h1><p>​    分布式：例如：我们在远端将远端的某个数据进行删除之后，我们在本地通过git pull<br>​           拉取远端数据时，再通过本地去查看历史记录是可以看到远端的操作记录的，而且我们可以在本地重新恢复。每一个本地的都可以作为一个中央式的，当没有联网<br>​           的情况下，本地可以有多个提交，当有网络时再提交到远端，提交到远端会保持着所有在没有联网的情况下的提交，方便我们查看提交记录和代码评审<br>​    中央式：只有中央服务器保持着最新的版本，相同的场景，如果在没有联网的情况下去写代码，提交代码，当需要提交代码时，必须要联网才行。</p>
+<a id="more"></a>
+
+<h1 id="二、指令："><a href="#二、指令：" class="headerlink" title="二、指令："></a>二、指令：</h1><h2 id="git-clone："><a href="#git-clone：" class="headerlink" title="git clone："></a>git clone：</h2><p>​    在远端建立一个仓库，通过git clone 将远端仓库克隆到本地。</p>
+<h2 id="git-log："><a href="#git-log：" class="headerlink" title="git log："></a>git log：</h2><p>​    查看提交记录</p>
+<h2 id="git-add-："><a href="#git-add-：" class="headerlink" title="git add .："></a>git add .：</h2><p>​    将本地新增的文件添加进来</p>
+<h2 id="git-commit："><a href="#git-commit：" class="headerlink" title="git commit："></a>git commit：</h2><p>​    更新内容说明</p>
+<h2 id="git-push-origin-master："><a href="#git-push-origin-master：" class="headerlink" title="git push origin master："></a>git push origin master：</h2><p>​    将本地代码推到远端  origin是远端仓库 master是本地仓库的分支 如果远端没有这个仓库，那么会在远端创建一个新的仓库</p>
+<h2 id="git-pull-origin-master"><a href="#git-pull-origin-master" class="headerlink" title="git pull origin master:"></a>git pull origin master:</h2><p>​    拉取远端内容</p>
+<h2 id="git-branch-xxx"><a href="#git-branch-xxx" class="headerlink" title="git branch xxx:"></a>git branch xxx:</h2><p>​    创建一个分支</p>
+<h2 id="git-checkout-xxx"><a href="#git-checkout-xxx" class="headerlink" title="git checkout xxx:"></a>git checkout xxx:</h2><p>​    这个xxx可以是某个hash、也可以是某个分支</p>
+<h2 id="git-checkout-–detach"><a href="#git-checkout-–detach" class="headerlink" title="git checkout –detach"></a>git checkout –detach</h2><p>   直接与当前分支脱钩，指向当前commit</p>
+<p>​    将HEAD指向某个分支，切换分支</p>
+<h2 id="git-merge"><a href="#git-merge" class="headerlink" title="git merge:"></a>git merge:</h2><p>​    切换到需要合并其他分支的分支，将要合并的分支合并</p>
+<h2 id="git-merge-xxx-–no-ff"><a href="#git-merge-xxx-–no-ff" class="headerlink" title="git merge xxx –no-ff:"></a>git merge xxx –no-ff:</h2><p>不会查看出来做个合并</p>
+<h2 id="git-reset-–hard-cf62f5"><a href="#git-reset-–hard-cf62f5" class="headerlink" title="git reset –hard cf62f5:"></a>git reset –hard cf62f5:</h2><p>​    将HEAD重新移动到这个hash值的位置</p>
+<h2 id="git-merge-–continue"><a href="#git-merge-–continue" class="headerlink" title="git merge –continue:"></a>git merge –continue:</h2><p>​    合并过程中出现冲突，解决完冲突之后需要继续合并，先git add 再git merge –continue</p>
+<h2 id="git-status"><a href="#git-status" class="headerlink" title="git status:"></a>git status:</h2><p>​    查看文件内容修改</p>
+<h2 id="git-branch-d"><a href="#git-branch-d" class="headerlink" title="git branch -d:"></a>git branch -d:</h2><p>​    删除分支</p>
+<h2 id="git-rebase"><a href="#git-rebase" class="headerlink" title="git rebase:"></a>git rebase:</h2><p>​    将分支合并到当前分支，如果使用git merge会先将当前分支和将要合并的分支合成一个新的commit，再合并，提交记录并不是一根直线，当我们希望提交的记录是一根直线，就可以使用git rebase，<br>​    但是合并过来的commit并不是被合并分支上的commit，是将被合并分支上的commit复制了一份，实际上被合并上的分支还是存在的。</p>
+<h2 id="git-stash"><a href="#git-stash" class="headerlink" title="git stash:"></a>git stash:</h2><p>​    将当前修改提交到暂存区，例如：在某个分支上开发东西，只开发到一般，并没有完全完成某个功能，当前不需要commit，且现在需要切换分支时，可以通过git stash存到暂存区，当前分支的修改<br>​    会到最初开始这个功能之前，才能切换到其他分支</p>
+<h2 id="git-stash-pop"><a href="#git-stash-pop" class="headerlink" title="git stash pop:"></a>git stash pop:</h2><p>​    当我们在一个分支上做完事，需要回到我们之前开发一部分的分支上，通过该命令将暂存的修改重新找回来</p>
+<h2 id="git-reset"><a href="#git-reset" class="headerlink" title="git reset:"></a>git reset:</h2><p>​    会带着当前分支一起移动，而git checkout会将当前分支留在原地，而移动的只是HEAD，默认情况下是不会删除掉修改内容的，当reset 到某个分支时，只会移动到当前分支的那个commit<br>​    –hard:会将之前的修改的内容删除</p>
+<h2 id="git-commit-–amend"><a href="#git-commit-–amend" class="headerlink" title="git commit –amend:"></a>git commit –amend:</h2><p>​    只能修改最新的<br>​    假设当前最新的已经提交的写错了，可以通过这个修改最新修改，其实是将之前的commit复制了一个新的commit出来</p>
+<h2 id="git-rebase-XXX-i"><a href="#git-rebase-XXX-i" class="headerlink" title="git rebase XXX -i:"></a>git rebase XXX -i:</h2><p>​    交互式的rebase<br>​    可以修改指定位置的commit,也可以删除某个commit</p>
+<h2 id="git-rebase-–continue"><a href="#git-rebase-–continue" class="headerlink" title="git rebase –continue:"></a>git rebase –continue:</h2><p>​    远端的master是不能进行修改的。一旦push了，不能修改，只有进行新的修改再push到远端，但是如果一次push内容比较多，不记得哪些修改过了只能revert</p>
+<h2 id="git-revert-xxx"><a href="#git-revert-xxx" class="headerlink" title="git revert xxx:"></a>git revert xxx:</h2><p>​    将提交进行撤销操作</p>
+<h2 id="git-add-i"><a href="#git-add-i" class="headerlink" title="git add -i:"></a>git add -i:</h2><p>​    交互式的提交。将一个commit拆分成多个commit</p>
+<h2 id="git-diff-–staged"><a href="#git-diff-–staged" class="headerlink" title="git diff –staged:"></a>git diff –staged:</h2><p>​    缓存区和工作区的差异</p>
+<h2 id="git-diff"><a href="#git-diff" class="headerlink" title="git diff:"></a>git diff:</h2><p>​    工作目录和之前的提交的差异</p>
+<h2 id="git-show"><a href="#git-show" class="headerlink" title="git show:"></a>git show:</h2><p>​    查看commit的内容</p>
+<h2 id="git-tag-xxx"><a href="#git-tag-xxx" class="headerlink" title="git tag xxx:"></a>git tag xxx:</h2><p>​    tag跟branch很像，但是tag不能指向某个branch，且tag创建之后不能被改变，也不能被HEAD所指向。比较适合做持久的标记</p>
+<h2 id="git-cherry-pick"><a href="#git-cherry-pick" class="headerlink" title="git cherry-pick:"></a>git cherry-pick:</h2><p>将某些提交摘出来</p>
+<p>git reflog:<br>不加参数可以查看HEAD经过了哪些<br>git reflog xxx:<br>加参数可以查看分支经过了哪些</p>
+<h1 id="三、指令都发生了什么："><a href="#三、指令都发生了什么：" class="headerlink" title="三、指令都发生了什么："></a>三、指令都发生了什么：</h1><p>​    本地仓库其实就是我们.git文件夹下面的东西，git的所有操作都会存放到这个里面<br>​    git commit:<br>​    记录着所有的改动，将所有改动提交到了工作空间，更改了hash值，一般只要知道hash值的前8位就可以了<br>​    git add:<br>​    将文件提交到暂存区<br>​    git clone:<br>​    从远端地址拿到本地  clone就两个目的：<br>​    1、将所有的操作记录拿到本地<br>​        将远端分支拿到本地，将远端分支的镜像拿到本地(镜像：名字都带有origin且不能被HEAD所指向)<br>​        拿到这些引用之后，会去拿到具体内容，再拿到内容的上一级内容，这样整个clone过程就完成了<br>​    2、将所有文件拿到本地<br>​    git push:<br>​    将本地的提交和之前的所有提交推到远端仓库<br>​        先将当前的commit提交到远端，当从当前commit到之前的位置存在缺失时，会将缺失的一部分也推上去，然后将远端的HEAD更新，将本地的镜像也更新<br>​    git pull:<br>​    拉取远程分支代码<br>​      1、把所有远端镜像更新到本地  git fetch<br>​      2、将缺失的commit更新到本地 git merge origin/??? 将远端合并到本地<br>​    git fetch:<br>​    将远端镜像取过来</p>
+<p>引用：</p>
+<p>​    指向某个提交的指针<br>​    cf62f530e29eeb08b4ab3b2309ef953aaad0edf0 (HEAD -&gt; main, origin/main, origin/HEAD)：例如括号里面的这几个，都指向cf62f53这个hash<br>​    HEAD：这个指针永远指向的是当前工作空间<br>​    </p>
+<h1 id="四、项目中的分支管理：feature-Branching"><a href="#四、项目中的分支管理：feature-Branching" class="headerlink" title="四、项目中的分支管理：feature Branching"></a>四、项目中的分支管理：feature Branching</h1><p>​    先假设一种情况，当我们在master上做一个新功能时，现在突然来了一个紧急任务，需要优先处理，如果我们没有分支管理，直接也在master上进行处理，现在我们新功能<br>​    也在这个分支上，紧急任务也在这个分支上，那么紧急任务只能等我们新功能开发完之后才能提交，这就造成了我们这个紧急任务没这么快得到处理，所以这就体现了分支<br>​    管理的重要性。<br>​    Feature Branching：<br>​    1、新开发功能，拉出一个新的分支进行开发<br>​    2、紧急任务的，也重新拉出一个分支来<br>​    前面拉出的分支都必须是从最开始的完整分支拉出来的分支，当一个分支开发完之后，切换到master，将这个分支合并到master</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/2017/03/31/git%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/" title="git核心概念">http://example.com/2017/03/31/git核心概念/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/git/" rel="tag"><i class="fa fa-tag"></i> git</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/11/10/%E5%85%AD%E5%A4%A7%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99/" rel="next" title="六大设计原则">
+                  六大设计原则 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">roqy</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">82k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">1:14</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
